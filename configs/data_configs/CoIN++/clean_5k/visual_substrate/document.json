@@ -1,0 +1,16 @@
+{
+  "benchmark": "CoIN++",
+  "profile": "clean_5k",
+  "factor": "visual_substrate",
+  "category": "document",
+  "stage_index": 3,
+  "num_stages": 6,
+  "train_path": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset/coin_factor1_final_clean/splits/visual_substrate/trainable/train/document/train.json",
+  "replay_path": "/mnt/hdd1/chencheng/Code/MCITlib/datasets/CoIN++/clean_5k/visual_substrate/document/replay.json",
+  "router_path": "/mnt/hdd1/chencheng/Code/MCITlib/datasets/CoIN++/clean_5k/visual_substrate/document/router.json",
+  "test_path": "/mnt/hdd1/chencheng/Code/MCITlib/datasets/CoIN++/clean_5k/visual_substrate/document/questions.json",
+  "eval_annotation_path": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset/coin_factor1_final_clean/splits/visual_substrate/trainable/eval/document/eval.json",
+  "train_folder": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset",
+  "router_folder": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset",
+  "test_folder": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset"
+}

@@ -1,0 +1,16 @@
+{
+  "benchmark": "CoIN++",
+  "profile": "legacy_10k",
+  "factor": "visual_substrate",
+  "category": "natural_photo",
+  "stage_index": 1,
+  "num_stages": 6,
+  "train_path": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset/coin_factor1_final/splits/visual_substrate/trainable/train/natural_photo/train.json",
+  "replay_path": "/mnt/hdd1/chencheng/Code/MCITlib/datasets/CoIN++/legacy_10k/visual_substrate/natural_photo/replay.json",
+  "router_path": "/mnt/hdd1/chencheng/Code/MCITlib/datasets/CoIN++/legacy_10k/visual_substrate/natural_photo/router.json",
+  "test_path": "/mnt/hdd1/chencheng/Code/MCITlib/datasets/CoIN++/legacy_10k/visual_substrate/natural_photo/questions.json",
+  "eval_annotation_path": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset/coin_factor1_final/splits/visual_substrate/trainable/eval/natural_photo/eval.json",
+  "train_folder": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset",
+  "router_folder": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset",
+  "test_folder": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset"
+}

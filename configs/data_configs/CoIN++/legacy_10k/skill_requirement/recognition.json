@@ -1,0 +1,16 @@
+{
+  "benchmark": "CoIN++",
+  "profile": "legacy_10k",
+  "factor": "skill_requirement",
+  "category": "recognition",
+  "stage_index": 1,
+  "num_stages": 10,
+  "train_path": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset/coin_factor1_final/splits/skill_requirement/trainable/train/recognition/train.json",
+  "replay_path": "/mnt/hdd1/chencheng/Code/MCITlib/datasets/CoIN++/legacy_10k/skill_requirement/recognition/replay.json",
+  "router_path": "/mnt/hdd1/chencheng/Code/MCITlib/datasets/CoIN++/legacy_10k/skill_requirement/recognition/router.json",
+  "test_path": "/mnt/hdd1/chencheng/Code/MCITlib/datasets/CoIN++/legacy_10k/skill_requirement/recognition/questions.json",
+  "eval_annotation_path": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset/coin_factor1_final/splits/skill_requirement/trainable/eval/recognition/eval.json",
+  "train_folder": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset",
+  "router_folder": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset",
+  "test_folder": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset"
+}

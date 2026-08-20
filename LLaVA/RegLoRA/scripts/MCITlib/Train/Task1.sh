@@ -1,6 +1,5 @@
 #!/bin/bash
 
-pip install transformers==4.37.2
 
 ################## VICUNA ##################
 PROMPT_VERSION=v1
@@ -75,7 +74,6 @@ deepspeed --include localhost:$GPU_LIST --master_port 9001 llava/train/train_mem
     --lazy_preprocess True \
     --report_to none
 
-pip install transformers==4.37.2
 
 SAVE_PATH="${OUTPUT_DIR}_merged"
 python scripts/merge_lora_weights.py \

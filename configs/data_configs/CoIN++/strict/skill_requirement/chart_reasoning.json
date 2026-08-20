@@ -1,0 +1,16 @@
+{
+  "benchmark": "CoIN++",
+  "profile": "strict",
+  "factor": "skill_requirement",
+  "category": "chart_reasoning",
+  "stage_index": 5,
+  "num_stages": 10,
+  "train_path": "/mnt/hdd1/chencheng/Code/MCITlib/datasets/CoIN++/strict/skill_requirement/chart_reasoning/train.json",
+  "replay_path": "/mnt/hdd1/chencheng/Code/MCITlib/datasets/CoIN++/strict/skill_requirement/chart_reasoning/replay.json",
+  "router_path": "/mnt/hdd1/chencheng/Code/MCITlib/datasets/CoIN++/strict/skill_requirement/chart_reasoning/router.json",
+  "test_path": "/mnt/hdd1/chencheng/Code/MCITlib/datasets/CoIN++/strict/skill_requirement/chart_reasoning/questions.json",
+  "eval_annotation_path": "/mnt/hdd1/chencheng/Code/MCITlib/datasets/CoIN++/strict/skill_requirement/chart_reasoning/eval.json",
+  "train_folder": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset",
+  "router_folder": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset",
+  "test_folder": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset"
+}

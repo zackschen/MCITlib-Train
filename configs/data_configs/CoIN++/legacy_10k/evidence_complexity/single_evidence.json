@@ -1,0 +1,16 @@
+{
+  "benchmark": "CoIN++",
+  "profile": "legacy_10k",
+  "factor": "evidence_complexity",
+  "category": "single_evidence",
+  "stage_index": 1,
+  "num_stages": 4,
+  "train_path": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset/coin_factor1_final/splits/evidence_complexity/trainable/train/single_evidence/train.json",
+  "replay_path": "/mnt/hdd1/chencheng/Code/MCITlib/datasets/CoIN++/legacy_10k/evidence_complexity/single_evidence/replay.json",
+  "router_path": "/mnt/hdd1/chencheng/Code/MCITlib/datasets/CoIN++/legacy_10k/evidence_complexity/single_evidence/router.json",
+  "test_path": "/mnt/hdd1/chencheng/Code/MCITlib/datasets/CoIN++/legacy_10k/evidence_complexity/single_evidence/questions.json",
+  "eval_annotation_path": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset/coin_factor1_final/splits/evidence_complexity/trainable/eval/single_evidence/eval.json",
+  "train_folder": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset",
+  "router_folder": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset",
+  "test_folder": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset"
+}

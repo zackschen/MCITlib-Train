@@ -1,0 +1,5 @@
+{
+  "model_name": "/home/chencheng/data/Code/Easy_Train_MLLM/checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5",
+  "mm_projector": "/home/chencheng/data/Code/Easy_Train_MLLM/checkpoints/LLaVA/Vicuna/vicuna-7b-v1.5-projector/mm_projector.bin",
+  "vision_tower": "/home/chencheng/data/Code/Easy_Train_MLLM/checkpoints/LLaVA/clip-vit-large-patch14-336"
+}

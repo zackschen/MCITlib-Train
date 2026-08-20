@@ -1,0 +1,16 @@
+{
+  "benchmark": "CoIN++",
+  "profile": "clean_5k",
+  "factor": "skill_requirement",
+  "category": "knowledge_reasoning",
+  "stage_index": 4,
+  "num_stages": 10,
+  "train_path": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset/coin_factor1_final_clean/splits/skill_requirement/trainable/train/knowledge_reasoning/train.json",
+  "replay_path": "/mnt/hdd1/chencheng/Code/MCITlib/datasets/CoIN++/clean_5k/skill_requirement/knowledge_reasoning/replay.json",
+  "router_path": "/mnt/hdd1/chencheng/Code/MCITlib/datasets/CoIN++/clean_5k/skill_requirement/knowledge_reasoning/router.json",
+  "test_path": "/mnt/hdd1/chencheng/Code/MCITlib/datasets/CoIN++/clean_5k/skill_requirement/knowledge_reasoning/questions.json",
+  "eval_annotation_path": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset/coin_factor1_final_clean/splits/skill_requirement/trainable/eval/knowledge_reasoning/eval.json",
+  "train_folder": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset",
+  "router_folder": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset",
+  "test_folder": "/mnt/hdd1/chencheng/Code/Easy_Train_MLLM/cl_dataset"
+}

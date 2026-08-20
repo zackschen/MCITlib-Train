@@ -100,6 +100,10 @@ Whether you are exploring continual learning for MLLMs for the first time or ben
 ## 🏦 Benchmarks
 
 We evaluate on three benchmarks: [UCIT](https://huggingface.co/datasets/MLLM-CL/UCIT), [MLLM-CL](https://huggingface.co/datasets/MLLM-CL/MLLM-CL) and [CL-VISTA](https://huggingface.co/datasets/MLLM-CL/CL-VISTA). Please download the corresponding images/videos and instruction files from the links above, and organize them in the following directory structure:
+
+### CoIN++ local extension
+
+This checkout also includes a factor-controlled CoIN++ adapter for LLaVA continual-learning methods. See [COINPP.md](COINPP.md) for data preparation, training, matrix evaluation, resume behavior, and independent LLM-Judge evaluation.
 ```
 |--your_data_path
     |-- CL-VISTA

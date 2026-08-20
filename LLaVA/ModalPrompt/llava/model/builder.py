@@ -23,6 +23,7 @@ from llava.model import *
 from llava.constants import DEFAULT_IMAGE_PATCH_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
 
 def load_pretrained_model(model_path, model_base, model_name, prefix_len, cur_task, text_tower, num_tasks, load_8bit=False, load_4bit=False, device_map="auto", device="cuda", **kwargs):
+    mm_projector_path = kwargs.pop("mm_projector_path", None)
     kwargs = {"device_map": device_map, **kwargs}
 
     if device != "cuda":
@@ -96,10 +97,12 @@ def load_pretrained_model(model_path, model_base, model_name, prefix_len, cur_ta
                 # todo: tokenizer
                 clip_tokenizer = AutoTokenizer.from_pretrained(text_tower, cache_dir=None, model_max_length=77, padding_side="right", use_fast=True)
                 model.set_comtinual_eval(tokenizer = tokenizer, clip_tokenizer = clip_tokenizer, prefix_len = prefix_len, cur_task = cur_task, num_tasks = num_tasks)    
-            try:
-                mm_projector_weights = torch.load(os.path.join(model_base, 'mm_projector.bin'), map_location='cpu')
-            except FileNotFoundError:
-                mm_projector_weights = torch.load('/mnt/ShareDB_6TB/models/llava-v1.5-mlp2x-336px-pretrain-vicuna-7b-v1.5/mm_projector.bin', map_location='cpu')
+            projector_path = mm_projector_path or os.path.join(model_base, 'mm_projector.bin')
+            if not os.path.isfile(projector_path):
+                raise FileNotFoundError(
+                    f"ModalPrompt mm_projector not found: {projector_path}"
+                )
+            mm_projector_weights = torch.load(projector_path, map_location='cpu')
             mm_projector_weights = {k: v.to(torch.float16) for k, v in mm_projector_weights.items()}
             model.load_state_dict(mm_projector_weights, strict=False)
 
