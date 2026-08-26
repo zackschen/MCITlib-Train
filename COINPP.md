@@ -56,6 +56,16 @@ cd /home/chencheng/data/Code/MCITlib
 python3 scripts/coinpp/prepare_coinpp.py --profile clean_5k
 ```
 
+If another server only has the self-contained dataset under
+`datasets/CoIN++/media/coin_factor1_final_clean`, prepare everything locally:
+
+```bash
+bash scripts/coinpp/prepare_from_local_media.sh
+```
+
+This generates the method-facing `train.json`, `questions.json`, `replay.json`,
+`router.json`, and data configs without requiring an Easy_Train_MLLM checkout.
+
 Use `--source-root` and `--media-root` if the Easy_Train_MLLM checkout
 moves. Data configs are generated under
 `configs/data_configs/CoIN++/<profile>/<factor>/`.

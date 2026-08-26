@@ -10,7 +10,27 @@ try:
     from flash_attn.flash_attn_interface import flash_attn_unpadded_qkvpacked_func
 except ImportError:
     from flash_attn.flash_attn_interface import flash_attn_varlen_qkvpacked_func as flash_attn_unpadded_qkvpacked_func
-from flash_attn.bert_padding import unpad_input, pad_input
+
+try:
+    from flash_attn.bert_padding import unpad_input, pad_input
+except ImportError:
+    try:
+        from flash_attn.padding import unpad_input, pad_input
+    except ImportError:
+        def unpad_input(hidden_states, attention_mask):
+            seqlens_in_batch = attention_mask.sum(dim=-1, dtype=torch.int32)
+            indices = torch.nonzero(attention_mask.flatten(), as_tuple=False).flatten()
+            max_seqlen_in_batch = seqlens_in_batch.max().item()
+            cu_seqlens = torch.nn.functional.pad(
+                torch.cumsum(seqlens_in_batch, dim=0, dtype=torch.int32), (1, 0)
+            )
+            hidden_states = hidden_states.reshape(-1, hidden_states.shape[-1])
+            return hidden_states[indices], indices, cu_seqlens, max_seqlen_in_batch
+
+        def pad_input(hidden_states, indices, batch, seqlen):
+            output = hidden_states.new_zeros((batch * seqlen, *hidden_states.shape[1:]))
+            output[indices] = hidden_states
+            return output.reshape(batch, seqlen, *hidden_states.shape[1:])
 
 
 def forward(

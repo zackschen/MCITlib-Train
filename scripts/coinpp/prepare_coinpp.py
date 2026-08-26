@@ -84,6 +84,8 @@ def replace_symlink(path, target, force=False):
             )
         path.unlink()
     elif path.exists():
+        if path.resolve() == target:
+            return
         if not force:
             raise RuntimeError(
                 "{} exists and is not the expected symlink; pass --force-links".format(
