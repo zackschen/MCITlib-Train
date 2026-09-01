@@ -261,7 +261,9 @@ def mean(values):
 def discover_cells(eval_root, categories, allow_incomplete):
     cells = {}
     stage_dirs = []
-    for stage_dir in sorted(eval_root.glob("stage*")):
+    for stage_dir in sorted(eval_root.iterdir()):
+        if not stage_dir.is_dir():
+            continue
         match = STAGE_RE.match(stage_dir.name)
         if not match:
             continue
