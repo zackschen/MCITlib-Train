@@ -313,7 +313,7 @@ def generate_one(row, args, state):
     with torch.inference_mode():
         try:
             output_ids = model.generate(input_ids, **generate_kwargs)
-        except TypeError as error:
+        except (TypeError, ValueError) as error:
             if "image_sizes" not in str(error):
                 raise
             generate_kwargs.pop("image_sizes", None)
