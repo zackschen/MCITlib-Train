@@ -447,10 +447,41 @@ def format_value(value):
     return "n/a" if value is None else "{:.4f}".format(value)
 
 
-def write_markdown(path, payload):
+def append_lower_triangle_matrix(lines, title, matrix, categories):
+    lines.extend(
+        [
+            "## {}".format(title),
+            "",
+            "| Stage | {} | Mean seen |".format(" | ".join(categories)),
+            "|---:|{}|---:|".format("|".join(["---:" for _ in categories])),
+        ]
+    )
+    for stage_index in sorted(matrix):
+        row_values = []
+        seen_values = []
+        for task_index, category in enumerate(categories, start=1):
+            value = matrix[stage_index].get(category)
+            if task_index <= stage_index:
+                row_values.append(format_value(value))
+                if value is not None:
+                    seen_values.append(value)
+            else:
+                row_values.append("n/a")
+        lines.append(
+            "| {} | {} | {} |".format(
+                stage_index,
+                " | ".join(row_values),
+                format_value(mean(seen_values)),
+            )
+        )
+    lines.append("")
+
+
+def write_markdown(path, payload, matrices):
     native = payload["continual_metrics"]["native_proxy"]
     exact = payload["continual_metrics"]["exact_match"]
     f1 = payload["continual_metrics"]["token_f1"]
+    categories = payload["categories"]
     lines = [
         "# CoIN++ Continual-Learning Summary",
         "",
@@ -485,12 +516,34 @@ def write_markdown(path, payload):
             format_value(f1["average_forgetting"]),
         ),
         "",
+    ]
+    append_lower_triangle_matrix(
+        lines,
+        "Native Proxy Task Matrix",
+        matrices["native_proxy"],
+        categories,
+    )
+    append_lower_triangle_matrix(
+        lines,
+        "Exact Match Task Matrix",
+        matrices["exact_match"],
+        categories,
+    )
+    append_lower_triangle_matrix(
+        lines,
+        "Token F1 Task Matrix",
+        matrices["token_f1"],
+        categories,
+    )
+    lines.extend(
+        [
         "The native proxy applies multiple-choice accuracy, single-reference ANLS, "
         "relaxed numeric accuracy, or normalized exact match according to the "
         "available dataset metadata. It is not labeled as an official metric when "
         "the original benchmark annotations are unavailable.",
         "",
-    ]
+        ]
+    )
     path.write_text("\n".join(lines), encoding="utf-8")
 
 
@@ -535,6 +588,7 @@ def main():
         "eval_root": str(eval_root),
         "audit": audit,
         "continual_metrics": continual,
+        "matrices": matrices,
         "cells": [
             cells[key]
             for key in sorted(cells, key=lambda item: (item[0], categories.index(item[1])))
@@ -548,7 +602,7 @@ def main():
         continual["native_proxy"]["per_task"],
     )
     write_json(output_dir / "summary.json", payload)
-    write_markdown(output_dir / "summary.md", payload)
+    write_markdown(output_dir / "summary.md", payload, matrices)
 
     native = continual["native_proxy"]
     print("CoIN++ continual summary")
