@@ -149,6 +149,58 @@ class LLaVATrainer(Trainer):
         else:
             return super()._get_train_sampler()
 
+    def create_scheduler(self, num_training_steps: int, optimizer: torch.optim.Optimizer = None):
+        scheduler = super().create_scheduler(num_training_steps, optimizer=optimizer)
+        self._patch_scheduler_param_group_sync()
+        return scheduler
+
+    def _patch_scheduler_param_group_sync(self):
+        if self.lr_scheduler is None:
+            return
+        if getattr(self.lr_scheduler, "_llava_param_group_sync_patched", False):
+            return
+
+        scheduler = self.lr_scheduler
+        original_step = scheduler.step
+
+        def step_with_param_group_sync(*args, **kwargs):
+            optimizer = getattr(scheduler, "optimizer", None)
+            param_groups = getattr(optimizer, "param_groups", None)
+            base_lrs = getattr(scheduler, "base_lrs", None)
+            lr_lambdas = getattr(scheduler, "lr_lambdas", None)
+
+            if param_groups is not None and base_lrs is not None:
+                group_count = len(param_groups)
+                lr_count = len(base_lrs)
+                if lr_count != group_count:
+                    if lr_count > group_count:
+                        scheduler.base_lrs = list(base_lrs[:group_count])
+                    else:
+                        extra_lrs = [
+                            group.get("initial_lr", group["lr"])
+                            for group in param_groups[lr_count:]
+                        ]
+                        scheduler.base_lrs = list(base_lrs) + extra_lrs
+                    if lr_lambdas is not None:
+                        if len(lr_lambdas) > group_count:
+                            scheduler.lr_lambdas = list(lr_lambdas[:group_count])
+                        elif len(lr_lambdas) < group_count:
+                            fallback = lr_lambdas[-1] if lr_lambdas else (lambda _: 1.0)
+                            scheduler.lr_lambdas = list(lr_lambdas) + [
+                                fallback
+                                for _ in range(group_count - len(lr_lambdas))
+                            ]
+                    logger.warning(
+                        "Adjusted lr scheduler base_lrs from %s to %s entries to match optimizer param groups.",
+                        lr_count,
+                        group_count,
+                    )
+
+            return original_step(*args, **kwargs)
+
+        scheduler.step = step_with_param_group_sync
+        scheduler._llava_param_group_sync_patched = True
+
     def create_optimizer(self):
         """
         Setup the optimizer.
@@ -211,6 +263,19 @@ class LLaVATrainer(Trainer):
                         "weight_decay": 0.0,
                     },
                 ]
+
+            non_empty_groups = [
+                group for group in optimizer_grouped_parameters if len(group["params"]) > 0
+            ]
+            dropped_groups = len(optimizer_grouped_parameters) - len(non_empty_groups)
+            if dropped_groups:
+                logger.info(
+                    "Dropping %s empty optimizer parameter group(s) before scheduler creation.",
+                    dropped_groups,
+                )
+            optimizer_grouped_parameters = non_empty_groups
+            if not optimizer_grouped_parameters:
+                raise ValueError("No trainable parameters found for optimizer creation.")
 
             optimizer_cls, optimizer_kwargs = Trainer.get_optimizer_cls_and_kwargs(self.args)
 
