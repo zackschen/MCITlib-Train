@@ -876,7 +876,7 @@ def train():
             model.get_input_embeddings().register_forward_hook(make_inputs_require_grad)
 
     if training_args.dora_enable:
-        from peft import DoraConfig, get_peft_model
+        from peft import DoraConfig, get_peft_model as get_dora_peft_model
         kwargs = { 
             "task_embedding_dim": model_args.task_embedding_dim,
             "expert_num": model_args.expert_num,
@@ -895,7 +895,7 @@ def train():
             if training_args.fp16:
                 model.to(torch.float16)
         rank0_print("Adding DoRA adapters...")
-        model = get_peft_model(model, dora_config)
+        model = get_dora_peft_model(model, dora_config)
 
     if training_args.lora_enable:
         kwargs = { 

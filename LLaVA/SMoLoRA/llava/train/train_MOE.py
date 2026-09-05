@@ -879,7 +879,7 @@ def train():
             model.get_input_embeddings().register_forward_hook(make_inputs_require_grad)
 
     if training_args.dora_enable:
-        from CoIN.peft import DoraConfig, get_peft_model
+        from CoIN.peft import DoraConfig, get_peft_model as get_dora_peft_model
         with open(model_args.ins_emb, 'rb') as f:
             ins_emb = pickle.load(f)
         ins_emb = ins_emb.tolist()
@@ -903,7 +903,7 @@ def train():
             if training_args.fp16:
                 model.to(torch.float16)
         rank0_print("Adding DoRA adapters...")
-        model = get_peft_model(model, dora_config)
+        model = get_dora_peft_model(model, dora_config)
 
     if training_args.lora_enable:
         with open(model_args.ins_emb, 'rb') as f:
