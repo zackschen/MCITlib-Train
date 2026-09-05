@@ -14,6 +14,7 @@
 
 
 import os, sys
+from pathlib import Path
 import warnings
 import shutil
 
@@ -22,7 +23,9 @@ import torch
 from llava.model import *
 from llava.constants import DEFAULT_IMAGE_PATCH_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
 
-sys.path.append('/your_path/MCITlib_v3/LLaVA/HiDe')
+_METHOD_ROOT = str(Path(__file__).resolve().parents[2])
+if _METHOD_ROOT not in sys.path:
+    sys.path.append(_METHOD_ROOT)
 
 def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, load_4bit=False, device_map="auto", device="cuda", num_task=10, text_tower=None, **kwargs):
     kwargs = {"device_map": device_map, **kwargs}

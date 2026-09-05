@@ -24,7 +24,10 @@ from typing import Dict, Optional, Sequence, List
 
 import torch
 import sys
-sys.path.append('/your_path/MCITlib_v3/LLaVA/CL-MoE')
+from pathlib import Path
+_METHOD_ROOT = str(Path(__file__).resolve().parents[2])
+if _METHOD_ROOT not in sys.path:
+    sys.path.append(_METHOD_ROOT)
 import transformers
 import subprocess
 
@@ -813,7 +816,7 @@ def train():
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
     if training_args.lora_enable and training_args.dora_enable:
         raise ValueError("DoRA and LoRA cannot be enabled at the same time.")
-    with open("/your_path/MCITlib_v3/LLaVA/CL-MoE/task.txt", "w") as t:
+    with open(os.path.join(_METHOD_ROOT, "task.txt"), "w") as t:
         t.write(model_args.task)
     local_rank = training_args.local_rank
     compute_dtype = (torch.float16 if training_args.fp16 else (torch.bfloat16 if training_args.bf16 else torch.float32))

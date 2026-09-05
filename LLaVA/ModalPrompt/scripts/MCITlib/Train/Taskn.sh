@@ -29,18 +29,33 @@ BATCH_SIZE=$(read_config "$TRAIN_CONFIG" batch_size)
 GRAD_ACC=$(read_config "$TRAIN_CONFIG" grad_acc)
 LR=$(read_config "$TRAIN_CONFIG" lr)
 
-GPU_LIST=""
-for i in $(seq 0 $((GPU_NUM-1))); do
-    GPU_LIST+="$i,"
-done
-GPU_LIST=${GPU_LIST%,}
+DEEPSPEED_ENV=()
+DEEPSPEED_RESOURCE_ARGS=()
+if [[ -z "${CUDA_VISIBLE_DEVICES:-}" ]]; then
+    GPU_LIST=""
+    for i in $(seq 0 $((GPU_NUM-1))); do
+        GPU_LIST+="$i,"
+    done
+    GPU_LIST=${GPU_LIST%,}
+    DEEPSPEED_RESOURCE_ARGS=(--include "localhost:$GPU_LIST")
+else
+    IFS=',' read -ra VISIBLE_GPU_LIST <<< "$CUDA_VISIBLE_DEVICES"
+    if [[ ${#VISIBLE_GPU_LIST[@]} -lt "$GPU_NUM" ]]; then
+        echo "CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES exposes fewer GPUs than gpu_num=$GPU_NUM" >&2
+        exit 2
+    fi
+    SELECTED_GPUS=$(IFS=,; echo "${VISIBLE_GPU_LIST[*]:0:$GPU_NUM}")
+    DEEPSPEED_ENV=(env -u CUDA_VISIBLE_DEVICES)
+    DEEPSPEED_RESOURCE_ARGS=(--include "localhost:$SELECTED_GPUS")
+    echo "Using physical GPU(s): $SELECTED_GPUS"
+fi
 
 ################## LLaMA-2 ##################
 # PROMPT_VERSION="llava_llama_2"
 # MODEL_VERSION="Llama-2-7b-chat-hf"
 ################## LLaMA-2 ##################
 
-deepspeed --include localhost:$GPU_LIST --master_port 9001 llava/train/train_mem.py \
+"${DEEPSPEED_ENV[@]}" deepspeed "${DEEPSPEED_RESOURCE_ARGS[@]}" --master_port 9001 llava/train/train_mem.py \
     --deepspeed ./scripts/zero3_offload.json \
     --lora_enable False --mm_projector_lr 2e-5 --pt_enable True \
     --model_name_or_path $MODEL_NAME \

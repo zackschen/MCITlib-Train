@@ -1,5 +1,8 @@
 import sys
-sys.path.append('/your_path/MCITlib_v3/LLaVA/SEFE')
+from pathlib import Path
+_METHOD_ROOT = str(Path(__file__).resolve().parents[1])
+if _METHOD_ROOT not in sys.path:
+    sys.path.append(_METHOD_ROOT)
 import argparse
 from llava.model.builder import load_pretrained_model
 from llava.eval.CoIN.coin_utils import get_model_name_from_path

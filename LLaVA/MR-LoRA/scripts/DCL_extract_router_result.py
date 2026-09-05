@@ -4,9 +4,11 @@ Router merge.jsonl 与专家 Result.json 对齐：每条用 merge 的 question_i
 """
 import os
 import json
+from pathlib import Path
 
 # 与当前仓库结果目录一致；若使用 MLLM-DCL，请改此处路径
-BASE_PATH = "/your_path/MCITlib_v3/LLaVA/MR-LoRA/results/DCL/each_dataset"
+_MR_LORA_ROOT = Path(__file__).resolve().parents[1]
+BASE_PATH = str(_MR_LORA_ROOT / "results" / "DCL" / "each_dataset")
 
 # 专家结果文件名候选（优先 Result.json）
 EXPERT_RESULT_NAMES = ("Result.json", "result.json", "results.json")

@@ -6,6 +6,7 @@ import warnings
 import math
 from dataclasses import dataclass, field
 import copy
+from pathlib import Path
 
 import numpy as np
 
@@ -43,6 +44,9 @@ from ..import_utils import is_bnb_4bit_available, is_bnb_available
 
 if is_bnb_available():
     import bitsandbytes as bnb
+
+_CL_MOE_ROOT = Path(__file__).resolve().parents[3]
+_CL_MOE_TASK_FILE = _CL_MOE_ROOT / "task.txt"
 
 @dataclass
 class CLMoEMOELoraConfig(LoraConfig):
@@ -396,7 +400,7 @@ class CLMoEMOELoraLinear(nn.Linear, CLMoEMOELoraLayer):
 
             router = torch.softmax(router, dim=-1)
 
-            with open("/your_path/MCITlib_v3/LLaVA/CL-MoE/task.txt", "r" , encoding="utf-8") as f:
+            with open(_CL_MOE_TASK_FILE, "r", encoding="utf-8") as f:
                 task = f.read()
 
             import datetime

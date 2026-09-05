@@ -1,5 +1,8 @@
+from pathlib import Path
 import sys
-sys.path.append('/your_path/MCITlib_v3/LLaVA/SEFE')
+_METHOD_ROOT = str(Path(__file__).resolve().parents[3])
+if _METHOD_ROOT not in sys.path:
+    sys.path.append(_METHOD_ROOT)
 from typing import List, Optional, Tuple, Union
 
 import torch

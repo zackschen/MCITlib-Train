@@ -4,7 +4,10 @@
 
 # Need to call this before importing transformers.
 import sys
-sys.path.append('/your_path/MCITlib_v3/LLaVA/DISCO')
+from pathlib import Path
+_METHOD_ROOT = str(Path(__file__).resolve().parents[2])
+if _METHOD_ROOT not in sys.path:
+    sys.path.append(_METHOD_ROOT)
 from llava.train.llama_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn
 
 replace_llama_attn_with_flash_attn()

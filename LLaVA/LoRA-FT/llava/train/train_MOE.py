@@ -24,6 +24,7 @@ from typing import Dict, Optional, Sequence, List
 
 import torch
 import sys
+from pathlib import Path
 import transformers
 import subprocess
 
@@ -35,7 +36,9 @@ from llava import conversation as conversation_lib
 from llava.model import *
 from llava.mm_utils import tokenizer_image_token
 
-sys.path.append('/your_path/MCITlib_v3/LLaVA/LoRA-FT')
+_METHOD_ROOT = str(Path(__file__).resolve().parents[2])
+if _METHOD_ROOT not in sys.path:
+    sys.path.append(_METHOD_ROOT)
 
 from CoIN.peft import PeftModel, TaskType, get_peft_model, CoINMOELoraConfig, WEIGHTS_NAME, set_peft_model_state_dict
 

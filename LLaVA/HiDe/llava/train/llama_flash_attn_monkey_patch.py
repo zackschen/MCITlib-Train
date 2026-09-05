@@ -7,10 +7,95 @@ import transformers
 from transformers.models.llama.modeling_llama import apply_rotary_pos_emb, repeat_kv
 
 try:
-    from flash_attn.flash_attn_interface import flash_attn_unpadded_qkvpacked_func
+    from flash_attn.flash_attn_interface import flash_attn_varlen_qkvpacked_func as _flash_attn_varlen_qkvpacked_func
 except ImportError:
-    from flash_attn.flash_attn_interface import flash_attn_varlen_qkvpacked_func as flash_attn_unpadded_qkvpacked_func
-from flash_attn.bert_padding import unpad_input, pad_input
+    try:
+        from flash_attn.flash_attn_interface import flash_attn_unpadded_qkvpacked_func as _flash_attn_varlen_qkvpacked_func
+    except ImportError:
+        _flash_attn_varlen_qkvpacked_func = None
+
+try:
+    from flash_attn.flash_attn_interface import flash_attn_qkvpacked_func as _flash_attn_qkvpacked_func
+except ImportError:
+    _flash_attn_qkvpacked_func = None
+
+try:
+    from flash_attn.bert_padding import unpad_input, pad_input
+except ImportError:
+    try:
+        from flash_attn.padding import unpad_input, pad_input
+    except ImportError:
+        def unpad_input(hidden_states, attention_mask):
+            seqlens_in_batch = attention_mask.sum(dim=-1, dtype=torch.int32)
+            indices = torch.nonzero(attention_mask.flatten(), as_tuple=False).flatten()
+            max_seqlen_in_batch = seqlens_in_batch.max().item()
+            cu_seqlens = torch.nn.functional.pad(
+                torch.cumsum(seqlens_in_batch, dim=0, dtype=torch.int32), (1, 0)
+            )
+            hidden_states = hidden_states.reshape(-1, hidden_states.shape[-1])
+            return hidden_states[indices], indices, cu_seqlens, max_seqlen_in_batch
+
+        def pad_input(hidden_states, indices, batch, seqlen):
+            output = hidden_states.new_zeros((batch * seqlen, *hidden_states.shape[1:]))
+            output[indices] = hidden_states
+            return output.reshape(batch, seqlen, *hidden_states.shape[1:])
+
+
+def _torch_qkv_attention(qkv, attention_mask=None):
+    q = qkv[:, :, 0].transpose(1, 2)
+    k = qkv[:, :, 1].transpose(1, 2)
+    v = qkv[:, :, 2].transpose(1, 2)
+
+    if attention_mask is None:
+        output = torch.nn.functional.scaled_dot_product_attention(
+            q, k, v, dropout_p=0.0, is_causal=True
+        )
+    else:
+        seq_len = qkv.shape[1]
+        causal_mask = torch.ones(
+            (seq_len, seq_len), dtype=torch.bool, device=qkv.device
+        ).tril()
+        attn_mask = causal_mask[None, None, :, :] & attention_mask[:, None, None, :].bool()
+        output = torch.nn.functional.scaled_dot_product_attention(
+            q, k, v, attn_mask=attn_mask, dropout_p=0.0, is_causal=False
+        )
+
+    return output.transpose(1, 2).reshape(qkv.shape[0], qkv.shape[1], -1)
+
+
+def _flash_qkv_attention(qkv, attention_mask=None):
+    if attention_mask is None and _flash_attn_qkvpacked_func is not None:
+        return _flash_attn_qkvpacked_func(
+            qkv, 0.0, softmax_scale=None, causal=True
+        ).reshape(qkv.shape[0], qkv.shape[1], -1)
+
+    if _flash_attn_varlen_qkvpacked_func is None:
+        return _torch_qkv_attention(qkv, attention_mask)
+
+    batch_size, seq_len = qkv.shape[:2]
+    if attention_mask is None:
+        qkv = qkv.reshape(-1, *qkv.shape[2:])
+        cu_q_lens = torch.arange(
+            0,
+            (batch_size + 1) * seq_len,
+            step=seq_len,
+            dtype=torch.int32,
+            device=qkv.device,
+        )
+        output = _flash_attn_varlen_qkvpacked_func(
+            qkv, cu_q_lens, seq_len, 0.0, softmax_scale=None, causal=True
+        )
+        return output.reshape(batch_size, seq_len, -1)
+
+    unpadded_qkv, indices, cu_q_lens, max_s = unpad_input(
+        qkv.reshape(batch_size, seq_len, -1), attention_mask
+    )
+    unpadded_qkv = unpadded_qkv.view(-1, *qkv.shape[2:])
+    output_unpad = _flash_attn_varlen_qkvpacked_func(
+        unpadded_qkv, cu_q_lens, max_s, 0.0, softmax_scale=None, causal=True
+    )
+    output_unpad = output_unpad.reshape(-1, qkv.shape[3] * qkv.shape[4])
+    return pad_input(output_unpad, indices, batch_size, seq_len)
 
 
 def forward(
@@ -70,25 +155,7 @@ def forward(
     qkv = qkv.transpose(1, 3)  # shape: [b, s, 3, num_heads, head_dim]
     key_padding_mask = attention_mask
 
-    if key_padding_mask is None:
-        qkv = qkv.reshape(-1, 3, self.num_heads, self.head_dim)
-        cu_q_lens = torch.arange(
-            0, (bsz + 1) * q_len, step=q_len, dtype=torch.int32, device=qkv.device
-        )
-        max_s = q_len
-        output = flash_attn_unpadded_qkvpacked_func(
-            qkv, cu_q_lens, max_s, 0.0, softmax_scale=None, causal=True
-        )
-        output = output.view(bsz, q_len, -1)
-    else:
-        qkv = qkv.reshape(bsz, q_len, -1)
-        qkv, indices, cu_q_lens, max_s = unpad_input(qkv, key_padding_mask)
-        qkv = qkv.view(-1, 3, self.num_heads, self.head_dim)
-        output_unpad = flash_attn_unpadded_qkvpacked_func(
-            qkv, cu_q_lens, max_s, 0.0, softmax_scale=None, causal=True
-        )
-        output_unpad = output_unpad.reshape(-1, self.num_heads * self.head_dim)
-        output = pad_input(output_unpad, indices, bsz, q_len)
+    output = _flash_qkv_attention(qkv, key_padding_mask)
 
     return self.o_proj(output), None, past_key_value
 

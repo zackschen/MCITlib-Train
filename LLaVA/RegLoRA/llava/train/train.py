@@ -12,7 +12,10 @@ import transformers
 import subprocess
 import tokenizers
 import sys
-sys.path.append('/your_path/MCITlib_v3/LLaVA/SEFE')
+from pathlib import Path
+_METHOD_ROOT = str(Path(__file__).resolve().parents[2])
+if _METHOD_ROOT not in sys.path:
+    sys.path.append(_METHOD_ROOT)
 
 from llava.constants import IGNORE_INDEX, IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
 from torch.utils.data import Dataset

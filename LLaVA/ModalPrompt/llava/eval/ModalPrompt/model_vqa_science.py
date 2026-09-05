@@ -2,7 +2,10 @@ import argparse
 import torch
 import os
 import sys
-sys.path.append('/your_path/MCITlib_v3/LLaVA/ModalPrompt')
+from pathlib import Path
+_METHOD_ROOT = str(Path(__file__).resolve().parents[3])
+if _METHOD_ROOT not in sys.path:
+    sys.path.append(_METHOD_ROOT)
 import json
 from tqdm import tqdm
 import shortuuid

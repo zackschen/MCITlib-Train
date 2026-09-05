@@ -24,7 +24,10 @@ from typing import Dict, Optional, Sequence, List
 
 import torch
 import sys
-sys.path.append('/your_path/MCITlib_v3/LLaVA/HiDe')
+from pathlib import Path
+_METHOD_ROOT = str(Path(__file__).resolve().parents[2])
+if _METHOD_ROOT not in sys.path:
+    sys.path.append(_METHOD_ROOT)
 import transformers
 
 from llava.constants import IGNORE_INDEX, IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN

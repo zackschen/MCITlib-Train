@@ -1,9 +1,12 @@
 import os
 import json
+from pathlib import Path
+
+_MR_LORA_ROOT = Path(__file__).resolve().parents[1]
 
 def process_cl_results():
     # 1. 基础路径
-    base_path = "/your_path/MCITlib_v3/LLaVA/MR-LoRA/results/MLLM-ACL/each_dataset"
+    base_path = str(_MR_LORA_ROOT / "results" / "MLLM-ACL" / "each_dataset")
     
     # 2. 定义 CL 任务顺序 (Task ID -> Domain Name & Pred Code)
     # 映射结构: Pred Code -> (Domain Folder Name, Task ID)
