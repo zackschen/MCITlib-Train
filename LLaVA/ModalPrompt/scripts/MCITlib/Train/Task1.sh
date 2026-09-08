@@ -27,6 +27,7 @@ EPOCH=$(read_config "$TRAIN_CONFIG" epoch)
 BATCH_SIZE=$(read_config "$TRAIN_CONFIG" batch_size)
 GRAD_ACC=$(read_config "$TRAIN_CONFIG" grad_acc)
 LR=$(read_config "$TRAIN_CONFIG" lr)
+DEEPSPEED_CONFIG=${DEEPSPEED_CONFIG:-./scripts/zero3.json}
 
 DEEPSPEED_ENV=()
 DEEPSPEED_RESOURCE_ARGS=()
@@ -55,7 +56,7 @@ fi
 ################## LLaMA-2 ##################
 
 "${DEEPSPEED_ENV[@]}" deepspeed "${DEEPSPEED_RESOURCE_ARGS[@]}" --master_port 9001 llava/train/train_mem.py \
-    --deepspeed ./scripts/zero3_offload.json \
+    --deepspeed "$DEEPSPEED_CONFIG" \
     --lora_enable False --mm_projector_lr 2e-5 --pt_enable True \
     --model_name_or_path $MODEL_NAME \
     --pretrain_mm_mlp_adapter $MM_PROJECTOR \
