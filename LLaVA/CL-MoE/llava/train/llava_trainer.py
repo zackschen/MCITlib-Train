@@ -159,6 +159,8 @@ class LLaVATrainer(Trainer):
             return
 
         scheduler = self.lr_scheduler
+        if not hasattr(scheduler, "step"):
+            return
         original_step = scheduler.step
 
         def step_with_param_group_sync(*args, **kwargs):

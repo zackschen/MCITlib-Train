@@ -10,7 +10,52 @@ from torch import nn
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
 
 from transformers.activations import ACT2FN
-from transformers.cache_utils import Cache, DynamicCache
+try:
+    from transformers.cache_utils import Cache, DynamicCache
+except ImportError:
+    class Cache:
+        pass
+
+    class DynamicCache(Cache):
+        def __init__(self, legacy_cache=None):
+            self.cache = list(legacy_cache or [])
+            self.seen_tokens = 0
+            if self.cache:
+                self.seen_tokens = self.cache[0][0].shape[-2]
+
+        @classmethod
+        def from_legacy_cache(cls, legacy_cache):
+            return cls(legacy_cache)
+
+        def to_legacy_cache(self):
+            return tuple(self.cache)
+
+        def get_usable_length(self, new_seq_length=None, layer_idx=None):
+            if layer_idx is not None and layer_idx < len(self.cache):
+                return self.cache[layer_idx][0].shape[-2]
+            if self.cache:
+                return self.cache[0][0].shape[-2]
+            return 0
+
+        def get_seq_length(self):
+            return self.get_usable_length()
+
+        def get_max_length(self):
+            return None
+
+        def update(self, key_states, value_states, layer_idx, cache_kwargs=None):
+            if layer_idx is None:
+                layer_idx = len(self.cache)
+            while len(self.cache) <= layer_idx:
+                self.cache.append(None)
+            previous = self.cache[layer_idx]
+            if previous is not None:
+                key_states = torch.cat([previous[0], key_states], dim=-2)
+                value_states = torch.cat([previous[1], value_states], dim=-2)
+            self.cache[layer_idx] = (key_states, value_states)
+            self.seen_tokens = key_states.shape[-2]
+            return key_states, value_states
+
 from transformers.modeling_attn_mask_utils import (
     AttentionMaskConverter,
     _prepare_4d_attention_mask,
@@ -23,18 +68,31 @@ from transformers.pytorch_utils import ALL_LAYERNORM_LAYERS, is_torch_greater_or
 from transformers.utils import (
     add_start_docstrings,
     add_start_docstrings_to_model_forward,
-    is_flash_attn_2_available,
-    is_flash_attn_greater_or_equal_2_10,
     logging,
     replace_return_docstrings,
 )
+try:
+    from transformers.utils import is_flash_attn_2_available, is_flash_attn_greater_or_equal_2_10
+except ImportError:
+    def is_flash_attn_2_available():
+        return False
+
+    def is_flash_attn_greater_or_equal_2_10():
+        return False
 from transformers.utils.import_utils import is_torch_fx_available
 from transformers.models.llama.configuration_llama import LlamaConfig
 
 
 if is_flash_attn_2_available():
-    from flash_attn import flash_attn_func, flash_attn_varlen_func
-    from flash_attn.bert_padding import index_first_axis, pad_input, unpad_input  # noqa
+    try:
+        from flash_attn import flash_attn_func, flash_attn_varlen_func
+        try:
+            from flash_attn.bert_padding import index_first_axis, pad_input, unpad_input  # noqa
+        except ImportError:
+            from flash_attn.padding import index_first_axis, pad_input, unpad_input  # noqa
+    except ImportError:
+        flash_attn_func = None
+        flash_attn_varlen_func = None
 
 
 # This makes `_prepare_4d_causal_attention_mask` a leaf function in the FX graph.
@@ -277,14 +335,14 @@ class LlamaAttention(nn.Module):
                 "when creating this class."
             )
 
-        self.attention_dropout = config.attention_dropout
+        self.attention_dropout = getattr(config, "attention_dropout", 0.0)
         self.hidden_size = config.hidden_size
         self.num_heads = config.num_attention_heads
         self.head_dim = self.hidden_size // self.num_heads
-        self.num_key_value_heads = config.num_key_value_heads
+        self.num_key_value_heads = getattr(config, "num_key_value_heads", self.num_heads)
         self.num_key_value_groups = self.num_heads // self.num_key_value_heads
         self.max_position_embeddings = config.max_position_embeddings
-        self.rope_theta = config.rope_theta
+        self.rope_theta = getattr(config, "rope_theta", 10000.0)
         self.is_causal = True
 
         if (self.head_dim * self.num_heads) != self.hidden_size:
@@ -293,10 +351,11 @@ class LlamaAttention(nn.Module):
                 f" and `num_heads`: {self.num_heads})."
             )
 
-        self.q_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim, bias=config.attention_bias)
-        self.k_proj = nn.Linear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=config.attention_bias)
-        self.v_proj = nn.Linear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=config.attention_bias)
-        self.o_proj = nn.Linear(self.num_heads * self.head_dim, self.hidden_size, bias=config.attention_bias)
+        attention_bias = getattr(config, "attention_bias", False)
+        self.q_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim, bias=attention_bias)
+        self.k_proj = nn.Linear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=attention_bias)
+        self.v_proj = nn.Linear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=attention_bias)
+        self.o_proj = nn.Linear(self.num_heads * self.head_dim, self.hidden_size, bias=attention_bias)
         self._init_rope()
 
     def _init_rope(self):
@@ -730,13 +789,19 @@ LLAMA_ATTENTION_CLASSES = {
     "sdpa": LlamaSdpaAttention,
 }
 
+def _get_attn_implementation(config):
+    implementation = getattr(config, "_attn_implementation", "eager")
+    if implementation == "flash_attention_2" and globals().get("flash_attn_func") is None:
+        return "eager"
+    return implementation if implementation in LLAMA_ATTENTION_CLASSES else "eager"
+
 
 class LlamaDecoderLayer(nn.Module):
     def __init__(self, config: LlamaConfig, layer_idx: int, regularization_info=None):
         super().__init__()
         self.hidden_size = config.hidden_size
 
-        self.self_attn = LLAMA_ATTENTION_CLASSES[config._attn_implementation](config=config, layer_idx=layer_idx)
+        self.self_attn = LLAMA_ATTENTION_CLASSES[_get_attn_implementation(config)](config=config, layer_idx=layer_idx)
 
         self.mlp = LlamaMLP(config)
         self.input_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
@@ -988,8 +1053,9 @@ class LlamaModel(LlamaPreTrainedModel):
             self.layers = nn.ModuleList(
                 [LlamaDecoderLayer(config, layer_idx) for layer_idx in range(config.num_hidden_layers)]
             )
-        self._use_sdpa = config._attn_implementation == "sdpa"
-        self._use_flash_attention_2 = config._attn_implementation == "flash_attention_2"
+        attn_implementation = _get_attn_implementation(config)
+        self._use_sdpa = attn_implementation == "sdpa"
+        self._use_flash_attention_2 = attn_implementation == "flash_attention_2"
         self.norm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
         self.gradient_checkpointing = False
