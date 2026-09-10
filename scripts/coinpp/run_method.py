@@ -16,7 +16,12 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 METHODS = {
     "LoRA-FT": {"workflow": "sequential", "rank": 32, "batch_size": 4},
     "Replay": {"workflow": "sequential", "rank": 32, "batch_size": 4},
-    "OLoRA": {"workflow": "sequential", "rank_mode": "expert_scaled", "batch_size": 4},
+    "OLoRA": {
+        "workflow": "sequential",
+        "rank_mode": "expert_scaled",
+        "batch_size": 4,
+        "gradient_checkpointing": "False",
+    },
     "MoELoRA": {"workflow": "sequential", "rank": 32, "batch_size": 4},
     "ModalPrompt": {"workflow": "sequential", "rank": 0, "batch_size": 8},
     "CL-MoE": {"workflow": "sequential", "rank_mode": "expert_scaled", "batch_size": 8},
@@ -63,7 +68,7 @@ def parse_args():
     parser.add_argument("--rank", type=int)
     parser.add_argument("--expert-num", type=int)
     parser.add_argument("--prefix-len", type=int, default=20)
-    parser.add_argument("--gradient-checkpointing", choices=("True", "False"), default="True")
+    parser.add_argument("--gradient-checkpointing", choices=("True", "False"))
     parser.add_argument("--smolora-emb", type=Path)
     parser.add_argument("--start-stage", type=int, default=1)
     parser.add_argument("--stop-stage", type=int, default=0)
@@ -173,7 +178,8 @@ def stage_config(
         "num_tasks": num_stages,
         "prefix_len": args.prefix_len,
         "task": "CoINPP_{}_{}".format(args.factor, category),
-        "gradient_checkpointing": args.gradient_checkpointing,
+        "gradient_checkpointing": args.gradient_checkpointing
+        or settings.get("gradient_checkpointing", "True"),
         "ins_type": stage_index - 1,
         "base_model": "llava",
         "key_id": max(0, stage_index - 2),

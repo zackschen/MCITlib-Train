@@ -20,6 +20,7 @@ DRY_RUN="${DRY_RUN:-0}"
 FORCE="${FORCE:-0}"
 SKIP_MISSING_CHECKPOINTS="${SKIP_MISSING_CHECKPOINTS:-0}"
 SMOLORA_EMB="${SMOLORA_EMB:-}"
+GRADIENT_CHECKPOINTING="${GRADIENT_CHECKPOINTING:-}"
 
 train_args=(
   --method "$METHOD"
@@ -53,6 +54,9 @@ if [[ "$SKIP_MISSING_CHECKPOINTS" == "1" ]]; then
 fi
 if [[ -n "$LIMIT" ]]; then
   eval_args+=(--limit "$LIMIT")
+fi
+if [[ -n "$GRADIENT_CHECKPOINTING" ]]; then
+  train_args+=(--gradient-checkpointing "$GRADIENT_CHECKPOINTING")
 fi
 if [[ "$METHOD" == "SMoLoRA" ]]; then
   if [[ -z "$SMOLORA_EMB" ]]; then
