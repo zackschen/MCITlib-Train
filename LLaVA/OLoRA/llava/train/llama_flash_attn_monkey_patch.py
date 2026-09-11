@@ -1,7 +1,20 @@
+import functools
 from typing import Optional, Tuple
 import warnings
 
 import torch
+import torch.utils.checkpoint as torch_checkpoint
+
+
+_original_checkpoint = torch_checkpoint.checkpoint
+if not getattr(_original_checkpoint, "_llava_non_reentrant", False):
+    @functools.wraps(_original_checkpoint)
+    def _non_reentrant_checkpoint(function, *args, **kwargs):
+        kwargs.setdefault("use_reentrant", False)
+        return _original_checkpoint(function, *args, **kwargs)
+
+    _non_reentrant_checkpoint._llava_non_reentrant = True
+    torch_checkpoint.checkpoint = _non_reentrant_checkpoint
 
 import transformers
 from transformers.models.llama.modeling_llama import apply_rotary_pos_emb, repeat_kv
