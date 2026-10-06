@@ -6,8 +6,10 @@
 import sys
 from pathlib import Path
 _METHOD_ROOT = str(Path(__file__).resolve().parents[2])
-if _METHOD_ROOT not in sys.path:
-    sys.path.append(_METHOD_ROOT)
+if not sys.path or sys.path[0] != _METHOD_ROOT:
+    if _METHOD_ROOT in sys.path:
+        sys.path.remove(_METHOD_ROOT)
+    sys.path.insert(0, _METHOD_ROOT)
 from llava.train.llama_flash_attn_monkey_patch import replace_llama_attn_with_flash_attn
 
 replace_llama_attn_with_flash_attn()

@@ -21,6 +21,14 @@ import json, deepspeed
 import logging
 import pathlib, random
 from typing import Dict, Optional, Sequence, List
+from pathlib import Path
+import sys
+
+_METHOD_ROOT = str(Path(__file__).resolve().parents[2])
+if not sys.path or sys.path[0] != _METHOD_ROOT:
+    if _METHOD_ROOT in sys.path:
+        sys.path.remove(_METHOD_ROOT)
+    sys.path.insert(0, _METHOD_ROOT)
 
 import torch
 import transformers
@@ -33,12 +41,6 @@ from llava.train.llava_trainer import LLaVATrainer
 from llava import conversation as conversation_lib
 from llava.model import *
 from llava.mm_utils import tokenizer_image_token
-
-from pathlib import Path
-import sys
-_METHOD_ROOT = str(Path(__file__).resolve().parents[2])
-if _METHOD_ROOT not in sys.path:
-    sys.path.append(_METHOD_ROOT)
 
 from CoIN.peft import PeftModel, TaskType, get_peft_model, CoINMOELoraConfig, WEIGHTS_NAME, set_peft_model_state_dict
 
